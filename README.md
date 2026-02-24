@@ -1,6 +1,20 @@
 # Remote Job Scraper
 
-Automated job scraper for Customer Success and Business Development roles (India-focused, remote).
+Automated job scraper for Customer Success and Business Development roles.
+
+## Sources
+
+| Source | Status | Jobs |
+|--------|--------|------|
+| Remote OK | ✅ API | 174 |
+| Remotive | ✅ API | 3 |
+| Google Alerts (Gmail) | ✅ API | 2 |
+| We Work Remotely | ⚠️ Needs fix | 0 |
+| Indeed | ⚠️ Rate limited | 0 |
+| Naukri | ❌ Blocked | - |
+| LinkedIn | ❌ No auth | - |
+
+**Total: ~178 jobs** (121 Customer Success, 55 Business Development)
 
 ## Setup
 
@@ -11,68 +25,66 @@ pip install -r requirements.txt
 
 ## Usage
 
-### Manual Run
+### Run Scraper
 ```bash
 python run_scraper.py
 ```
 
-### Cron Setup (every 3 hours)
+### Cron Job (every 3 hours)
 ```bash
-# Add to crontab
-0 */3 * * * cd /path/to/job-scraper && python run_scraper.py >> scraper.log 2>&1
+# Manual cron
+0 */3 * * * cd /path/to/job-scraper && python run_scraper.py
 ```
 
-Or use OpenClaw cron:
+Or use OpenClaw cron (already configured):
 ```
-/cron add --schedule "every 3 hours" --payload "run job scraper" --session isolated
+/cron add --schedule "every 3 hours" --session isolated
 ```
 
-## Output Files
+## Output
 
-| File | Description |
-|------|-------------|
-| `output/all_jobs.json` | All scraped jobs |
-| `output/customer_success.json` | CS roles only |
-| `output/business_development.json` | BD roles only |
-| `output/last_run.json` | Run statistics |
+Jobs saved to `output/`:
+- `all_jobs.json` - All scraped jobs
+- `customer_success.json` - CS roles only
+- `business_development.json` - BD roles only
+- `last_run.json` - Run statistics
 
-## Job Schema (for agents)
+## Job Schema
 
 ```json
 {
   "id": "abc123...",
   "title": "Customer Success Manager",
   "company": "TechCorp",
-  "location": "Remote / India",
+  "location": "Remote",
   "remote": true,
   "job_type": "customer_success",
   "source": "remote_ok",
   "source_url": "https://remoteok.com/...",
-  "description": "...",
-  "posted_date": "2026-02-24T...",
-  "scraped_at": "2026-02-24T...",
-  "salary": null,
   "apply_url": "https://remoteok.com/..."
 }
 ```
 
-## Sources
+## Google Alerts Integration
 
-- Remote OK
-- We Work Remotely  
-- Indeed (India remote)
-- LinkedIn (planned)
-- Naukri (planned)
+Uses Gmail API to read Google Alert emails:
+- Searches "customer success", for: "business development", "account manager"
+- Also reads LinkedIn job notification emails
+- Extracts job URLs from email body
 
-## Adding New Sources
+Requires Gmail API server running on `localhost:3001`.
 
-Edit `job_scraper.py` and add a new `scrape_*` method. Follow the pattern:
+## Next Steps
 
-```python
-async def scrape_new_source(self) -> List[Job]:
-    jobs = []
-    # Scrape logic here
-    return jobs
-```
+1. **Fix We Work Remotely** - Site changed selectors
+2. **Add more sources** - Check for more job board APIs
+3. **Improve Google Alerts parsing** - Extract actual job titles/companies
+4. **Add application automation** - Integrate with job-application-tool
 
-Then add to `scrape_all()` tasks list.
+## History
+
+- Created: 2026-02-24
+- Initial sources: Remote OK API, Remotive API
+- Added Google Alerts via Gmail API
+- Naukri blocked (requires real browser + CAPTCHA)
+- Indeed rate limited
