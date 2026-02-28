@@ -1,11 +1,23 @@
-# Job Scraper Dependencies
+# HTTP & parsing
 requests>=2.31.0
+httpx>=0.27.0
 beautifulsoup4>=4.12.0
-lxml>=4.9.0
-python-dotenv>=1.0.0
-aiohttp>=3.9.0
-asyncio>=3.4.3
-playwright>=1.40.0
-selenium>=4.15.0
-python-dateutil>=2.8.0
+lxml>=5.1.0
+
+# Browser automation (LinkedIn, Naukri fallback)
+playwright>=1.41.0
+
+# Data
 pydantic>=2.5.0
+
+# Scheduling (optional, alternative to cron)
+schedule>=1.2.0
+
+# Environment
+python-dotenv>=1.0.0
+
+# Rate limiting
+ratelimit>=2.2.1
+
+# Logging
+rich>=13.7.0

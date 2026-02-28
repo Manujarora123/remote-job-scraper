@@ -1,90 +1,70 @@
 # Remote Job Scraper
 
-Automated job scraper for Customer Success and Business Development roles.
+Scrapes Customer Success & Business Development remote jobs (India) from 5 sources every 2-5 hours. Outputs JSON for agent-based auto-application pipeline.
 
 ## Sources
-
-| Source | Status | Jobs |
+| Source | Method | Auth |
 |--------|--------|------|
-| Remote OK | ✅ API | 174 |
-| Remotive | ✅ API | 3 |
-| Google Alerts (Gmail) | ✅ API | 2 |
-| We Work Remotely | ⚠️ Needs fix | 0 |
-| Indeed | ⚠️ Rate limited | 0 |
-| Naukri | ❌ Blocked | - |
-| LinkedIn | ❌ No auth | - |
+| LinkedIn | HTTP + cookies | Session cookie |
+| Indeed | HTTP scraping | None |
+| Remote OK | Public JSON API | None |
+| We Work Remotely | HTTP scraping | None |
+| Naukri | HTTP scraping | None |
 
-**Total: ~178 jobs** (121 Customer Success, 55 Business Development)
-
-## Setup
-
+## Quick Start
 ```bash
-cd job-scraper
 pip install -r requirements.txt
+playwright install chromium
+cp .env.example .env   # add LinkedIn cookie if needed
+python run.py          # one-shot scrape
 ```
 
-## Usage
-
-### Run Scraper
-```bash
-python run_scraper.py
+## Cron (every 3 hours)
+```cron
+0 */3 * * * cd /path/to/remote-job-scraper && python run.py >> logs/cron.log 2>&1
 ```
 
-### Cron Job (every 3 hours)
-```bash
-# Manual cron
-0 */3 * * * cd /path/to/job-scraper && python run_scraper.py
-```
+## Eligibility + Scoring Config (Issue #2 scaffold)
+Configured in `config.py` under `ELIGIBILITY_SCORING` and via `.env`:
 
-Or use OpenClaw cron (already configured):
-```
-/cron add --schedule "every 3 hours" --session isolated
-```
+- `ELIGIBILITY_SCORING_ENABLED` (default `true`)
+- `ELIGIBILITY_POLICY` (default `pass_through`)
+- `ELIGIBILITY_DEFAULT_SCORE` (default `1.0`)
+
+`hard_filters`, `weights`, and `thresholds` are present as forward-compatible schema only.
+They are **not enforced** in this scaffold release.
 
 ## Output
+Results go to `output/jobs_YYYYMMDD_HHMMSS.json` and `output/latest.json` (symlink).
 
-Jobs saved to `output/`:
-- `all_jobs.json` - All scraped jobs
-- `customer_success.json` - CS roles only
-- `business_development.json` - BD roles only
-- `last_run.json` - Run statistics
+Each job now includes deterministic Issue #2 scaffold fields:
+- `eligibility_status` (`pass|review|reject`)
+- `score` (float)
+- `score_breakdown` (object)
+- `rejection_reasons` (string array)
 
-## Job Schema
+Issue #3 adds canonical dedupe fields:
+- `normalized_apply_url`, `company_norm`, `title_norm`, `location_norm`
+- `primary_fingerprint` (sha256 canonical key)
+- `source_job_id`, `source_ids` (secondary trace identifiers)
 
-```json
-{
-  "id": "abc123...",
-  "title": "Customer Success Manager",
-  "company": "TechCorp",
-  "location": "Remote",
-  "remote": true,
-  "job_type": "customer_success",
-  "source": "remote_ok",
-  "source_url": "https://remoteok.com/...",
-  "apply_url": "https://remoteok.com/..."
-}
+Current default policy is permissive pass-through (no thresholds enforced yet).
+
+## Architecture
 ```
-
-## Google Alerts Integration
-
-Uses Gmail API to read Google Alert emails:
-- Searches "customer success", for: "business development", "account manager"
-- Also reads LinkedIn job notification emails
-- Extracts job URLs from email body
-
-Requires Gmail API server running on `localhost:3001`.
-
-## Next Steps
-
-1. **Fix We Work Remotely** - Site changed selectors
-2. **Add more sources** - Check for more job board APIs
-3. **Improve Google Alerts parsing** - Extract actual job titles/companies
-4. **Add application automation** - Integrate with job-application-tool
-
-## History
-
-- Created: 2026-02-24
-- Initial sources: Remote OK API, Remotive API
-- Added Google Alerts via Gmail API
-- Naukri blocked (requires real browser + CAPTCHA)
-- Indeed rate limited
+run.py                  ← entry point (cron-friendly)
+config.py               ← search terms, filters, source toggles
+scraper.py              ← orchestrator: runs adapters, dedupes, outputs JSON
+models.py               ← Job dataclass + JSON schema
+pipeline/
+  eligibility_scoring.py ← Issue #2 pluggable eligibility/scoring scaffold
+adapters/
+  base.py               ← BaseAdapter ABC
+  linkedin.py           ← LinkedIn Jobs scraper
+  indeed.py             ← Indeed scraper
+  remoteok.py           ← Remote OK JSON API
+  weworkremotely.py      ← WWR scraper
+  naukri.py             ← Naukri scraper
+output/                 ← JSON results
+logs/                   ← cron logs
+```
