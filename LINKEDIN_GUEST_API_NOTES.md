@@ -31,4 +31,5 @@ If guest API is short/empty/blocked:
 
 ## Local scripts
 - `linkedin_jd_scraper.py` (standalone URL/ID parser + scraper)
+- `resolve_apply_paths.py` (adds `application_mode`, `application_url`, `ats_vendor` routing metadata)
 - Google Alerts enrichment uses guest API first, then Playwright fallback.
