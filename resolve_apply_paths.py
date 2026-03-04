@@ -24,6 +24,14 @@ from typing import Any, Dict, Optional
 from urllib.parse import urlparse
 
 import requests
+from dotenv import load_dotenv
+
+# Auto-load .env.local (takes precedence) then .env for LI_AT / JSESSIONID
+_repo_root = Path(__file__).resolve().parent
+for _env_file in (".env.local", ".env"):
+    _env_path = _repo_root / _env_file
+    if _env_path.exists():
+        load_dotenv(_env_path, override=False)
 
 try:
     from playwright.sync_api import sync_playwright

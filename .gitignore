@@ -1,0 +1,14 @@
+# Secrets & auth state — NEVER commit these
+.env
+.env.local
+*_storage_state.json
+linkedin_storage_state.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Editor
+.vscode/
+.idea/
