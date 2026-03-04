@@ -74,6 +74,52 @@ Uses Gmail API to read Google Alert emails:
 
 Requires Gmail API server running on `localhost:3001`.
 
+## LinkedIn Authentication Bootstrap
+
+The resolver uses LinkedIn session cookies (`li_at` + `JSESSIONID`) for the
+Voyager API tier.  A helper script captures them via a headed browser login.
+
+### 1. Capture credentials (one-time)
+
+```bash
+# Print cookies to stdout only
+python scripts/capture_linkedin_auth.py
+
+# Save cookies to .env.local AND storage-state JSON
+python scripts/capture_linkedin_auth.py --save-env --save-storage-state
+```
+
+A headed Chromium window opens → log in to LinkedIn → return to terminal and
+press ENTER.  The script writes:
+
+| Flag | Output |
+|------|--------|
+| *(none)* | Prints `LI_AT` / `JSESSIONID` to stdout |
+| `--save-env` | Upserts values into `.env.local` |
+| `--save-storage-state [PATH]` | Saves Playwright storage-state JSON (default `linkedin_storage_state.json`) |
+
+### 2. Use with the resolver
+
+```bash
+# Auto-loaded from .env.local (no flags needed)
+python resolve_apply_paths.py --input output/all_jobs.json
+
+# Or pass explicitly
+python resolve_apply_paths.py \
+  --linkedin-li-at "$LI_AT" \
+  --linkedin-jsessionid "$JSESSIONID"
+
+# Or use Playwright storage state
+python resolve_apply_paths.py --storage-state linkedin_storage_state.json
+```
+
+### ⚠️ Security notes
+
+* **Never commit** `.env.local`, `.env`, or `*_storage_state.json` — they
+  contain session secrets.  These are already in `.gitignore`.
+* Cookies expire when LinkedIn invalidates the session (typically 1-3 months).
+  Re-run the capture script when requests start returning `401`/`403`.
+
 ## Next Steps
 
 1. **Fix We Work Remotely** - Site changed selectors
