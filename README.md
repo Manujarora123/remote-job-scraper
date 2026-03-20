@@ -49,6 +49,29 @@ Jobs saved to `output/`:
 - `business_development.json` - BD roles only
 - `last_run.json` - Run statistics
 
+### Contact Enrichment Waterfall (Issue #22)
+
+Each job now supports deterministic founder/business email enrichment:
+
+1. Hunter lookup
+2. Apollo lookup
+3. Pattern guess fallback (`first@domain`, then variants, then `info@domain`)
+
+It records provenance per attempt (`contact_provenance`) and a confidence score (`contact_confidence`) by source:
+
+- Hunter: `0.95`
+- Apollo: `0.88`
+- Pattern guess: `0.55`
+
+Retry/backoff is built-in for transient and rate-limit failures.
+
+Set API keys to enable provider calls:
+
+```bash
+export HUNTER_API_KEY=...
+export APOLLO_API_KEY=...
+```
+
 ## Job Schema
 
 ```json
@@ -61,7 +84,13 @@ Jobs saved to `output/`:
   "job_type": "customer_success",
   "source": "remote_ok",
   "source_url": "https://remoteok.com/...",
-  "apply_url": "https://remoteok.com/..."
+  "apply_url": "https://remoteok.com/...",
+  "founder_email": "jane@techcorp.com",
+  "business_email": "jane@techcorp.com",
+  "contact_email": "jane@techcorp.com",
+  "contact_email_source": "hunter",
+  "contact_confidence": 0.95,
+  "contact_provenance": [{"source": "hunter", "attempt": 1, "status": "success"}]
 }
 ```
 
