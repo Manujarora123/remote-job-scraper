@@ -16,7 +16,9 @@ import aiohttp
 import requests
 from bs4 import BeautifulSoup
 import hashlib
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from pipeline.contact_enrichment import ApolloProvider, ContactEnricher, HunterProvider, RetryPolicy
 
 # Config
 CONFIG_PATH = Path(__file__).parent / "config.json"
@@ -37,6 +39,12 @@ class Job(BaseModel):
     scraped_at: str
     salary: str | None = None
     apply_url: str | None = None
+    founder_email: str | None = None
+    business_email: str | None = None
+    contact_email: str | None = None
+    contact_email_source: str | None = None
+    contact_confidence: float = 0.0
+    contact_provenance: list[dict[str, Any]] = Field(default_factory=list)
 
 class JobScraper:
     """Main job scraper with source adapters."""
@@ -48,7 +56,36 @@ class JobScraper:
         self.output_dir = OUTPUT_DIR
         self.output_dir.mkdir(exist_ok=True)
         self.headers = {"User-Agent": "Mozilla/5.0"}
+        self._contact_enricher = self._build_contact_enricher()
     
+    def _build_contact_enricher(self) -> ContactEnricher | None:
+        hunter_key = os.getenv("HUNTER_API_KEY", "").strip()
+        apollo_key = os.getenv("APOLLO_API_KEY", "").strip()
+        if not (hunter_key and apollo_key):
+            return None
+        return ContactEnricher(
+            hunter_provider=HunterProvider(hunter_key),
+            apollo_provider=ApolloProvider(apollo_key),
+            retry_policy=RetryPolicy(max_attempts=3, initial_backoff_seconds=0.5, max_backoff_seconds=3.0),
+        )
+
+    def _enrich_contact(self, *, company: str, source_url: str, founder_name: str | None = None) -> dict[str, Any]:
+        if not self._contact_enricher:
+            return {}
+
+        domain = self._extract_domain(source_url)
+        if not domain:
+            return {}
+
+        result = self._contact_enricher.enrich(founder_name=founder_name, domain=domain, company=company)
+        return result.to_dict()
+
+    def _extract_domain(self, url: str) -> str:
+        match = re.search(r"^https?://([^/]+)", (url or "").strip().lower())
+        if not match:
+            return ""
+        return match.group(1).removeprefix("www.")
+
     def generate_job_id(self, title: str, company: str, source_url: str) -> str:
         raw = f"{title}-{company}-{source_url}".lower().strip()
         return hashlib.md5(raw.encode()).hexdigest()[:12]
@@ -60,6 +97,8 @@ class JobScraper:
         remote = any(x in location.lower() for x in ['remote', 'work from home', 'wfh', 'india']) or \
                  location == "" or "global" in location.lower()
         
+        enriched = self._enrich_contact(company=company or "Unknown", source_url=source_url)
+
         return Job(
             id=self.generate_job_id(title, company, source_url),
             title=title,
@@ -73,7 +112,8 @@ class JobScraper:
             posted_date=posted_date or datetime.now().isoformat(),
             scraped_at=datetime.now().isoformat(),
             salary=salary,
-            apply_url=source_url
+            apply_url=source_url,
+            **enriched,
         )
     
     def classify_job_type(self, title: str, tags: List[str] = None, description: str = "") -> str:
