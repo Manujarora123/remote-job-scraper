@@ -117,3 +117,12 @@ Requires Gmail API server running on `localhost:3001`.
 - Added Google Alerts via Gmail API
 - Naukri blocked (requires real browser + CAPTCHA)
 - Indeed rate limited
+
+## Verification + Compliance (Issue #23)
+- Module: pipeline/verification_compliance.py
+- Prechecks: syntax + MX + catch-all
+- Provider adapters: NeverBounce / ZeroBounce
+- Suppression + opt-out checks
+- Guardrails: max touches + send windows
+- Audit logging: append-only JSONL
+See VERIFICATION_COMPLIANCE.md for usage.
