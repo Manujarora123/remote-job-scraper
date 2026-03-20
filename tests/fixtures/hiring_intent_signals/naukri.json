@@ -1,0 +1,16 @@
+[
+  {
+    "company": "Acme Labs",
+    "job_title": "Customer Success Manager",
+    "job_location": "Remote India",
+    "job_url": "https://wellfound.com/jobs/123/?utm_medium=email",
+    "date": "2026-03-03"
+  },
+  {
+    "company": "Naukri Startup",
+    "job_title": "Implementation Consultant",
+    "job_location": "Pune",
+    "job_url": "https://www.naukri.com/job-listings-implementation-consultant-abc-1001?src=jobsearchDesk",
+    "date": "2026-02-15"
+  }
+]
