@@ -1,0 +1,16 @@
+[
+  {
+    "company_name": "Acme Labs",
+    "title": "Customer Success Manager",
+    "location": "Remote India",
+    "url": "https://wellfound.com/jobs/123?utm_source=newsletter",
+    "posted_at": "2026-03-01"
+  },
+  {
+    "company_name": "OldCo",
+    "title": "Support Specialist",
+    "location": "Bangalore",
+    "url": "https://wellfound.com/jobs/999",
+    "posted_at": "2025-12-01"
+  }
+]
